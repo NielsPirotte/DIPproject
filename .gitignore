@@ -1,0 +1,6 @@
+#ignore all files but project file
+Basis_code.m
+project1_backup.m
+*.pdf
+*.mp4
+/vids
