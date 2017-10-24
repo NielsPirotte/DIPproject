@@ -33,9 +33,8 @@ xA = imclose(xA, se_tekst);
 xA = medfilt2(xA, medf);
 
 %% section 2 Forground frame
-figure,
 %for i=100:no_frames
-for i = 180:no_frames
+for i = 180:180
     frame = read(vid,i);
     
     %%Plaats hier je verwerking per frame %%
@@ -52,26 +51,32 @@ for i = 180:no_frames
     %%Verschil
     xVerschil = xA - xV;
  
-    %figure('name', 'verschil'), imshow(xVerschil)
+    figure('name', 'verschil'), imshow(xVerschil)
     
     %%section 3 Make uniform
     %%Uniform maken
-    %xVerschil = histeq(xVerschil, 100000);
-    %figure('name', 'histeq'), imshow(xVerschil)
+    xVerschil = histeq(xVerschil, 1000);
+    figure('name', 'histeq'), imshow(xVerschil)
+    
+    se_oc = strel('square', 10);
+    xVerschil = imopen(xVerschil, se_oc);
+    xVerschil = imclose(xVerschil, se_oc);
+    figure('name', 'open en close'), imshow(xVerschil)
     
     %% 
 
-    fBlack = xVerschil> 0.21;
+    %fBlack = xVerschil> 0.22;
+    fBlack = xVerschil > 0.9038;
     %fBlack = bwmorph(fBlack, 'clean');
     
-    %figure('name', 'to black'), imshow(fBlack)
+    figure('name', 'to black'), imshow(fBlack)
     
     %Opening by reconstruction
     fe=imerode(fBlack,ones(80,30));
     fBlack1=imreconstruct(fe,fBlack);
     
     %figure('name', 'reconstruct'), imshow(fBlack1)
-    %imshow(fBlack1)
+    imshow(fBlack1)
     %%figure, imshow(xVerschil)
     %%figure, imhist(xVerschil)
     %%Opening/closing
@@ -79,7 +84,7 @@ for i = 180:no_frames
     %se_tekst = strel('rectangle', [25, 15]);
     %figure('name', 'opening'), imshow(fBlack)
     fo = imopen(fBlack1,se);
-    imshow(fo)
+    %imshow(fo)
     
     %strategie:
     %Detecteer per frame of er een object verschijnt
