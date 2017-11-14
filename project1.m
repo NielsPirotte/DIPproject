@@ -5,7 +5,7 @@ clear;
 clc;
 
 % create video  object
-vid = VideoReader('Wandeling_1b.mp4');
+vid = VideoReader('Wandeling_2c.mp4');
 
 %Get properties from video
 framerate = vid.framerate;
@@ -34,6 +34,37 @@ se_tekst = strel('rectangle', [5 5]);
 xA = imclose(achtergrondFrame, se_tekst);
 xA = imopen(xA, se_tekst);
 
+%standard cutoff
+cutoff = 0;
+
+%%Determine cutoff heigth:
+%check = round(no_frames/2);
+check = 250;
+
+im_check = read(vid, check);
+
+figure, imshow(im_check)
+
+im_check = imopen(im_check, se_tekst);
+im_check = xA - im_check;
+im_check = im2bw(im_check, 0.20);
+
+se_oc = strel('rectangle', [25 25]);
+im_check = imopen(im_check, se_oc);
+
+figure, imshow(im_check)
+
+s_check = regionprops(im_check, {'BoundingBox'});
+    
+if numel(s_check) ~= 0
+    cutoff =  round(s_check(1).BoundingBox(2) + s_check(1).BoundingBox(4));
+end
+
+filtered = filterNiels(im_check, cutoff);
+figure, imshow(filtered)
+
+%%
+
 %figure, imshow(achtergrondFrame)
 %xAT = rgb2gray(achtergrondFrame);
 %xA = im2double(xAT);
@@ -54,7 +85,6 @@ for i = 1:no_frames
     
     %%Voorgrond
     voorgrondFrame = read(vid, i);
-    se_tekst = strel('rectangle', [5 5]);
     xV = imopen(voorgrondFrame, se_tekst);
     %xV = imopen(xV, se_tekst);
     
@@ -91,18 +121,18 @@ for i = 1:no_frames
     
     %fo = imclose(fo, se_oc);
     %figure('name', 'oc'), imshow(fo);
-    fo = filterNiels(fo);
+    fo = filterNiels(fo, cutoff);
     
     %%%
     s = regionprops(fo, {'Centroid', 'BoundingBox'});
     
-    %imshow(fo);
+    imshow(fo);
     
     if numel(s) ~= 0
             aantalFrames = aantalFrames +1;
         
             breedteX = s(1).BoundingBox(3);
-            PosX = s(1).BoundingBox(1)+breedteX;
+            PosX = s(1).BoundingBox(1) + breedteX;
             if breedteX < 40
                 continue;
             end
@@ -117,10 +147,10 @@ for i = 1:no_frames
             grafiekY1 = [grafiekY; mid];
             grafiekX = [grafiekX; s(1).Centroid(1)];
             grafiekY = [grafiekY; s(1).Centroid(2)];
-%              hold on
-%              plot(s(1).Centroid(1), s(1).Centroid(2), 'r*')
-%              rec = rectangle('Position', [s(1).BoundingBox(1), s(1).BoundingBox(2), s(1).BoundingBox(3), s(1).BoundingBox(4)], 'EdgeColor', 'r', 'LineWidth', 2);             
-%              hold off
+            hold on
+            plot(s(1).Centroid(1), s(1).Centroid(2), 'r*')
+            rec = rectangle('Position', [s(1).BoundingBox(1), s(1).BoundingBox(2), s(1).BoundingBox(3), s(1).BoundingBox(4)], 'EdgeColor', 'r', 'LineWidth', 2);             
+            hold off
     end
     %%
     
