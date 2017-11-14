@@ -47,7 +47,7 @@ xA = imopen(xA, se_tekst);
 %for i=100:no_frames
 %figure,
 for i = 1:no_frames
-    i*100.0/no_frames
+    strcat(num2str(round(i*100/no_frames)), "%")
     frame = read(vid,i);
     
     %%Plaats hier je verwerking per frame %%
@@ -75,17 +75,28 @@ for i = 1:no_frames
     % plot the original image, mask and filtered image all in one figure
     %figure('name', 'masked'), imshow(masked);
     fBlack = im2bw(xVerschil, 0.20);
+    %Opening by reconstruction
+    
     %figure('name', 'toblack'), imshow(fBlack);
     se_oc = strel('rectangle', [7 15]);
+    se_erode = strel('rectangle', [4 4]);
     fo = imopen(fBlack, se_oc);
-    fo = imclose(fo, se_oc);
+    fo = imerode(fo, se_erode);
+    %fo = imclose(fo, se_oc);
+    
+    %%
+    fe=imerode(fo,ones(80,30));
+    fBlack=imreconstruct(fe,fo);
+    %%
+    
+    %fo = imclose(fo, se_oc);
     %figure('name', 'oc'), imshow(fo);
     fo = filterNiels(fo);
     
     %%%
     s = regionprops(fo, {'Centroid', 'BoundingBox'});
     
-    imshow(fo);
+    %imshow(fo);
     
     if numel(s) ~= 0
             aantalFrames = aantalFrames +1;
@@ -106,10 +117,10 @@ for i = 1:no_frames
             grafiekY1 = [grafiekY; mid];
             grafiekX = [grafiekX; s(1).Centroid(1)];
             grafiekY = [grafiekY; s(1).Centroid(2)];
-             hold on
-             plot(s(1).Centroid(1), s(1).Centroid(2), 'r*')
-             rec = rectangle('Position', [s(1).BoundingBox(1), s(1).BoundingBox(2), s(1).BoundingBox(3), s(1).BoundingBox(4)], 'EdgeColor', 'r', 'LineWidth', 2);             
-             hold off
+%              hold on
+%              plot(s(1).Centroid(1), s(1).Centroid(2), 'r*')
+%              rec = rectangle('Position', [s(1).BoundingBox(1), s(1).BoundingBox(2), s(1).BoundingBox(3), s(1).BoundingBox(4)], 'EdgeColor', 'r', 'LineWidth', 2);             
+%              hold off
     end
     %%
     
@@ -138,7 +149,7 @@ for i = 1:no_frames
     
     %Opening by reconstruction
     %fe=imerode(fBlack,ones(80,30));
-    %fBlack1=imreconstruct(fe,fBlack);
+    %fBlack=imreconstruct(fe,fBlack);
     
     %figure('name', 'reconstruct'), imshow(fBlack1)
     %imshow(fBlack1)
@@ -160,14 +171,45 @@ for i = 1:no_frames
     %countFrames=0 ;
     
 end
-
 %grafiekX
 %grafiekY
 speed = ((lengthWalk*framerate)/(aantalFrames))*3.6
 
-grafiekY = smooth(grafiekY);
-figure, plot(grafiekX, grafiekY)
-figure, plot(grafiekX1, grafiekY1)
+%Smooth maken van de grafiek
+grafiekYT1 = smooth(grafiekY);
+grafiekYT2 = smooth(grafiekYT1);
+
+%Localisatie van de peaks
+[pks, locs] = findpeaks(grafiekY);
+figure, plot(grafiekX, grafiekY, grafiekX(locs), pks, 'or')
+
+[pks, locs] = findpeaks(grafiekYT1);
+figure, plot(grafiekX, grafiekYT1, grafiekX(locs), pks, 'or')
+
+[pks, locs] = findpeaks(grafiekYT2);
+figure, plot(grafiekX, grafiekYT2, grafiekX(locs), pks, 'or')
+
+%%Calculatie van de staplengte en stap duur
+n = numel(locs) -1;
+verschil_len = zeros(n);
+verschil_points = zeros(n);
+
+av_len = 0;
+av_points = 0;
+for i = 1:n
+ verschil_len(i) = grafiekX(locs(i+1)) - grafiekX(locs(i));
+ verschil_points(i) = locs(i+1)-locs(i);
+ av_len = av_len  + verschil_len(i);
+ av_points = av_points + verschil_points(i);
+end
+
+av_len = av_len/n;
+av_points = av_points/n;
+
+gemiddelde_stap_lengte = (lengthWalk/vidWidth)*av_len*100
+gemiddelde_stap_duur = (av_points/framerate)
+
+%figure, plot(grafiekX1, grafiekY1)
 
 %bereken wandelsnelheid
 %speed = lengthWalk/(countFrames * framerate);
